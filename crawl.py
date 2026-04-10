@@ -24,7 +24,8 @@ def parse_toc(html: str) -> list[dict] | None:
     if not script:
         return None
     data = json.loads(script.string)
-    return data["props"]["pageProps"]["toc"]
+    page_props = data["props"]["pageProps"]
+    return page_props.get("toc")
 
 
 def extract_article(html: str) -> str | None:
@@ -91,13 +92,17 @@ def _parse_cookie_string(cookie_str: str) -> list[dict]:
     return cookies
 
 
-def fetch_rendered_page(context, course: str, chapter: str) -> tuple[str | None, str | None]:
+def fetch_rendered_page(context, course: str, chapter: str | None = None) -> tuple[str | None, str | None]:
     """Fetch a chapter page using Playwright, wait for article to render.
 
     Returns (page_source_html, rendered_article_html) tuple.
     page_source_html is used for TOC parsing, rendered_article_html for content.
+    If chapter is None, navigates to the course index (which redirects to default chapter).
     """
-    url = f"{BASE_URL}/courses/{course}/{chapter}"
+    if chapter:
+        url = f"{BASE_URL}/courses/{course}/{chapter}"
+    else:
+        url = f"{BASE_URL}/courses/{course}"
     page = context.new_page()
     try:
         page.goto(url, wait_until="networkidle", timeout=60000)
@@ -231,10 +236,9 @@ def main():
 
         output_dir = os.path.join(args.output, args.course)
 
-        # Fetch TOC from the first chapter (or the specified chapter)
-        first_slug = args.chapter or "introduction-and-overview"
-        print(f"Fetching table of contents from {first_slug}...")
-        source, _article = fetch_rendered_page(context, args.course, first_slug)
+        # Fetch TOC by navigating to course index (redirects to default chapter)
+        print(f"Fetching table of contents for '{args.course}'...")
+        source, _article = fetch_rendered_page(context, args.course)
         if not source:
             print("[ERROR] Failed to fetch initial page")
             browser.close()
