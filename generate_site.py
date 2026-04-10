@@ -1,5 +1,6 @@
 """Generate a static HTML site from crawled ByteByteGo output."""
 
+import argparse
 import os
 import re
 import markdown as md_lib
@@ -205,3 +206,332 @@ def generate_chapter_page(
     {chapter_nav}
 </body>
 </html>'''
+
+
+def generate_stylesheet() -> str:
+    """Generate CSS stylesheet for the static site."""
+    return '''/* Reset and Base Styles */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 2rem;
+    background: #FFFFFF;
+    color: #1A1A2E;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+}
+
+/* Home Page Title */
+body > h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    color: #1A1A2E;
+}
+
+/* Course Grid - Home Page */
+.course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.course-card {
+    display: block;
+    background: #FFFFFF;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.course-card:hover {
+    border-color: #2CB67D;
+    box-shadow: 0 4px 16px rgba(44, 182, 125, 0.15);
+    transform: translateY(-2px);
+}
+
+.course-card h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+    color: #1A1A2E;
+}
+
+.course-card p {
+    margin: 0;
+    color: #6B7280;
+    font-size: 0.9rem;
+}
+
+/* Breadcrumb Navigation */
+.breadcrumb {
+    padding: 1rem 0;
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 0.95rem;
+}
+
+.breadcrumb a {
+    color: #2CB67D;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb a:hover {
+    color: #239863;
+    text-decoration: underline;
+}
+
+/* Chapter List - Course Page */
+.chapter-list {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0;
+    list-style-position: inside;
+}
+
+.chapter-list li {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #E5E7EB;
+    transition: background-color 0.2s ease;
+}
+
+.chapter-list li:hover {
+    background-color: #F0FDF4;
+}
+
+.chapter-list a {
+    text-decoration: none;
+    color: #1A1A2E;
+    display: inline;
+}
+
+.chapter-list a:hover {
+    color: #2CB67D;
+}
+
+/* Article Content - Chapter Page */
+.article-content {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    line-height: 1.7;
+}
+
+.article-content h1 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-size: 2.25rem;
+    color: #1A1A2E;
+    line-height: 1.2;
+}
+
+.article-content h2 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-size: 1.75rem;
+    color: #1A1A2E;
+    line-height: 1.3;
+}
+
+.article-content h3 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-size: 1.35rem;
+    color: #1A1A2E;
+    line-height: 1.4;
+}
+
+.article-content p {
+    margin-bottom: 1rem;
+}
+
+.article-content img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1.5rem auto;
+    border-radius: 8px;
+}
+
+.article-content code {
+    background: #F4F4F4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+}
+
+.article-content pre {
+    background: #F4F4F4;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    line-height: 1.4;
+    margin: 1rem 0;
+}
+
+.article-content pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.9rem;
+}
+
+.article-content blockquote {
+    border-left: 4px solid #2CB67D;
+    margin: 1.5rem 0;
+    padding-left: 1rem;
+    color: #6B7280;
+    font-style: italic;
+}
+
+.article-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+}
+
+.article-content table th,
+.article-content table td {
+    padding: 0.75rem;
+    border: 1px solid #E5E7EB;
+    text-align: left;
+}
+
+.article-content table th {
+    background: #F9FAFB;
+    font-weight: 600;
+}
+
+.article-content ul,
+.article-content ol {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.article-content li {
+    margin-bottom: 0.5rem;
+}
+
+/* Chapter Navigation - Bottom of Chapter Page */
+.chapter-nav {
+    max-width: 800px;
+    margin: 3rem auto 2rem;
+    padding: 1rem 0;
+    border-top: 1px solid #E5E7EB;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.chapter-nav a {
+    color: #2CB67D;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.chapter-nav a:hover {
+    color: #239863;
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    body {
+        padding: 1rem;
+    }
+
+    .course-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body > h1 {
+        font-size: 2rem;
+    }
+
+    .article-content {
+        padding: 0 0.5rem;
+    }
+
+    .article-content h1 {
+        font-size: 1.75rem;
+    }
+
+    .article-content h2 {
+        font-size: 1.5rem;
+    }
+
+    .article-content h3 {
+        font-size: 1.25rem;
+    }
+
+    .chapter-nav {
+        flex-direction: column;
+    }
+}
+'''
+
+
+def generate_site(output_dir: str) -> None:
+    """Generate the complete static site from crawled output."""
+    courses = scan_output_dir(output_dir)
+
+    # Write shared stylesheet
+    css_path = os.path.join(output_dir, "style.css")
+    with open(css_path, "w", encoding="utf-8") as f:
+        f.write(generate_stylesheet())
+
+    # Write home page
+    home_path = os.path.join(output_dir, "index.html")
+    with open(home_path, "w", encoding="utf-8") as f:
+        f.write(generate_home_page(courses))
+
+    for course in courses:
+        course_dir = os.path.join(output_dir, course["slug"])
+
+        # Write course page
+        course_page_path = os.path.join(course_dir, "index.html")
+        with open(course_page_path, "w", encoding="utf-8") as f:
+            f.write(generate_course_page(course))
+
+        # Write chapter pages
+        chapters = course["chapters"]
+        for i, chapter in enumerate(chapters):
+            chapter_dir = os.path.join(course_dir, chapter["slug"])
+            md_path = os.path.join(chapter_dir, "index.md")
+
+            with open(md_path, "r", encoding="utf-8") as f:
+                md_content = f.read()
+
+            prev_ch = chapters[i - 1] if i > 0 else None
+            next_ch = chapters[i + 1] if i < len(chapters) - 1 else None
+
+            course_name = format_course_name(course["slug"])
+            html = generate_chapter_page(course_name, chapter, md_content, prev_ch, next_ch)
+
+            chapter_html_path = os.path.join(chapter_dir, "chapter.html")
+            with open(chapter_html_path, "w", encoding="utf-8") as f:
+                f.write(html)
+
+    print(f"Generated site: {len(courses)} courses")
+    for course in courses:
+        print(f"  {format_course_name(course['slug'])}: {len(course['chapters'])} chapters")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Generate static HTML site from crawled output")
+    parser.add_argument("--output", default="output", help="Output directory (default: output)")
+    args = parser.parse_args()
+    generate_site(args.output)
+
+
+if __name__ == "__main__":
+    main()

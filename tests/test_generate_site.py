@@ -8,6 +8,7 @@ from generate_site import (
     generate_home_page,
     generate_course_page,
     generate_chapter_page,
+    generate_stylesheet,
 )
 
 
@@ -150,3 +151,47 @@ def test_generate_chapter_page_no_prev_next():
     assert "Intro" in html
     assert "Previous" not in html
     assert "Next" not in html
+
+
+def test_generate_stylesheet_has_key_rules():
+    css = generate_stylesheet()
+    assert ".course-card" in css
+    assert "max-width" in css
+    assert "#2CB67D" in css or "#2cb67d" in css
+
+
+def test_generate_site_end_to_end():
+    with tempfile.TemporaryDirectory() as tmp:
+        # Create fake course with 2 chapters
+        c1 = os.path.join(tmp, "test-course", "01-intro")
+        c2 = os.path.join(tmp, "test-course", "02-details")
+        os.makedirs(c1)
+        os.makedirs(c2)
+        with open(os.path.join(c1, "index.md"), "w") as f:
+            f.write("# Introduction\n\nFirst chapter.\n")
+        with open(os.path.join(c2, "index.md"), "w") as f:
+            f.write("# Details\n\nSecond chapter with **bold**.\n")
+
+        from generate_site import generate_site
+        generate_site(tmp)
+
+        # Check files exist
+        assert os.path.exists(os.path.join(tmp, "index.html"))
+        assert os.path.exists(os.path.join(tmp, "style.css"))
+        assert os.path.exists(os.path.join(tmp, "test-course", "index.html"))
+        assert os.path.exists(os.path.join(tmp, "test-course", "01-intro", "chapter.html"))
+        assert os.path.exists(os.path.join(tmp, "test-course", "02-details", "chapter.html"))
+
+        # Check home page links to course
+        with open(os.path.join(tmp, "index.html")) as f:
+            home = f.read()
+        assert "Test Course" in home
+        assert "2 chapters" in home
+
+        # Check chapter has rendered Markdown
+        with open(os.path.join(tmp, "test-course", "02-details", "chapter.html")) as f:
+            ch = f.read()
+        assert "<strong>bold</strong>" in ch
+
+        # Check chapter has prev/next nav
+        assert "Introduction" in ch  # prev link text
