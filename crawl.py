@@ -1,16 +1,20 @@
-"""ByteByteGo course crawler."""
+"""ByteByteGo course crawler.
+
+Uses Playwright to render pages (content is client-side rendered via MDX/JSX),
+then extracts the <article> HTML from the DOM.
+"""
 
 import argparse
 import json
 import os
 import sys
 import time
-from urllib.parse import urlparse, parse_qs, unquote
+from urllib.parse import parse_qs, unquote, urlparse
 
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from markdownify import markdownify
-import requests
+from playwright.sync_api import sync_playwright
 
 
 def parse_toc(html: str) -> list[dict] | None:
@@ -69,56 +73,74 @@ def html_to_markdown(html: str) -> str:
 
 
 BASE_URL = "https://bytebytego.com"
-USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
 
 
-def create_session(cookie: str) -> requests.Session:
-    """Create an HTTP session with cookie auth and browser-like headers."""
-    session = requests.Session()
-    session.headers.update({
-        "User-Agent": USER_AGENT,
-        "Cookie": cookie,
-        "Accept": "text/html,application/xhtml+xml",
-        "Accept-Language": "en-US,en;q=0.9",
-    })
-    return session
+def _parse_cookie_string(cookie_str: str) -> list[dict]:
+    """Parse a cookie header string into Playwright cookie objects."""
+    cookies = []
+    for pair in cookie_str.split(";"):
+        pair = pair.strip()
+        if "=" in pair:
+            name, value = pair.split("=", 1)
+            cookies.append({
+                "name": name.strip(),
+                "value": value.strip(),
+                "domain": ".bytebytego.com",
+                "path": "/",
+            })
+    return cookies
 
 
-def fetch_page(session: requests.Session, course: str, chapter: str) -> str | None:
-    """Fetch a chapter page. Returns HTML string or None on failure."""
+def fetch_rendered_page(context, course: str, chapter: str) -> tuple[str | None, str | None]:
+    """Fetch a chapter page using Playwright, wait for article to render.
+
+    Returns (page_source_html, rendered_article_html) tuple.
+    page_source_html is used for TOC parsing, rendered_article_html for content.
+    """
     url = f"{BASE_URL}/courses/{course}/{chapter}"
-    for attempt in range(2):
-        try:
-            resp = session.get(url, timeout=30)
-            if resp.status_code == 200:
-                return resp.text
-            print(f"  [WARN] HTTP {resp.status_code} for {chapter}")
-            if attempt == 0:
-                time.sleep(2)
-        except requests.RequestException as e:
-            print(f"  [WARN] Request failed for {chapter}: {e}")
-            if attempt == 0:
-                time.sleep(2)
-    return None
-
-
-def download_image(session: requests.Session, url: str, dest: str) -> bool:
-    """Download an image to dest path. Returns True on success."""
+    page = context.new_page()
     try:
-        resp = session.get(url, timeout=30)
-        if resp.status_code == 200:
+        page.goto(url, wait_until="networkidle", timeout=60000)
+        # Wait for article to render
+        try:
+            page.wait_for_selector("article", timeout=15000)
+        except Exception:
+            # Article might not render (e.g. paywall redirect)
+            source = page.content()
+            return source, None
+
+        source = page.content()
+        article_html = page.evaluate("""
+            () => {
+                const article = document.querySelector('article');
+                return article ? article.innerHTML : null;
+            }
+        """)
+        return source, article_html
+    except Exception as e:
+        print(f"  [WARN] Playwright error for {chapter}: {e}")
+        return None, None
+    finally:
+        page.close()
+
+
+def download_image_playwright(context, url: str, dest: str) -> bool:
+    """Download an image using Playwright's request context."""
+    try:
+        response = context.request.get(url, timeout=30000)
+        if response.ok:
             os.makedirs(os.path.dirname(dest), exist_ok=True)
             with open(dest, "wb") as f:
-                f.write(resp.content)
+                f.write(response.body())
             return True
-        print(f"  [WARN] Image HTTP {resp.status_code}: {url}")
-    except requests.RequestException as e:
+        print(f"  [WARN] Image HTTP {response.status}: {url}")
+    except Exception as e:
         print(f"  [WARN] Image download failed: {e}")
     return False
 
 
 def crawl_chapter(
-    session: requests.Session,
+    context,
     course: str,
     chapter_info: dict,
     output_dir: str,
@@ -134,12 +156,7 @@ def crawl_chapter(
     print(f"\n[{chapter_num:02d}] {title}")
     print(f"  Fetching {chapter_id}...")
 
-    html = fetch_page(session, course, chapter_id)
-    if not html:
-        print(f"  [SKIP] Failed to fetch chapter")
-        return False
-
-    article_html = extract_article(html)
+    _source, article_html = fetch_rendered_page(context, course, chapter_id)
     if not article_html:
         print(f"  [SKIP] No <article> found — may require paid access")
         return False
@@ -150,13 +167,18 @@ def crawl_chapter(
     if image_urls:
         os.makedirs(images_dir, exist_ok=True)
         for img_url in image_urls:
-            filename = _filename_from_url(img_url)
+            # Resolve relative URLs
+            if img_url.startswith("/"):
+                full_url = f"{BASE_URL}{img_url}"
+            else:
+                full_url = img_url
+            filename = _filename_from_url(full_url)
             local_path = f"images/{filename}"
             dest = os.path.join(chapter_dir, local_path)
-            if download_image(session, img_url, dest):
+            if download_image_playwright(context, full_url, dest):
                 url_map[img_url] = local_path
                 print(f"  Downloaded {filename}")
-            time.sleep(0.5)
+            time.sleep(0.3)
 
     # Rewrite image paths and save HTML
     if url_map:
@@ -196,37 +218,59 @@ def main():
         print("[ERROR] BYTEBYTEGO_COOKIE not set in .env")
         sys.exit(1)
 
-    session = create_session(cookie)
-    output_dir = os.path.join(args.output, args.course)
+    cookies = _parse_cookie_string(cookie)
 
-    # Fetch TOC from the first chapter (or the specified chapter)
-    first_slug = args.chapter or "introduction-and-overview"
-    print(f"Fetching table of contents from {first_slug}...")
-    html = fetch_page(session, args.course, first_slug)
-    if not html:
-        print("[ERROR] Failed to fetch initial page")
-        sys.exit(1)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                       "Chrome/120.0.0.0 Safari/537.36",
+        )
+        context.add_cookies(cookies)
 
-    toc = parse_toc(html)
-    if not toc:
-        print("[ERROR] Could not parse table of contents")
-        sys.exit(1)
+        output_dir = os.path.join(args.output, args.course)
 
-    print(f"Found {len(toc)} chapters in '{args.course}'")
-
-    # Filter to specific chapter if requested
-    if args.chapter:
-        toc = [ch for ch in toc if ch["id"] == args.chapter]
-        if not toc:
-            print(f"[ERROR] Chapter '{args.chapter}' not found")
+        # Fetch TOC from the first chapter (or the specified chapter)
+        first_slug = args.chapter or "introduction-and-overview"
+        print(f"Fetching table of contents from {first_slug}...")
+        source, _article = fetch_rendered_page(context, args.course, first_slug)
+        if not source:
+            print("[ERROR] Failed to fetch initial page")
+            browser.close()
             sys.exit(1)
 
-    # Crawl each chapter
-    success = 0
-    for chapter_info in toc:
-        if crawl_chapter(session, args.course, chapter_info, output_dir):
-            success += 1
-        time.sleep(1.5)  # Rate limit between chapters
+        toc = parse_toc(source)
+        if not toc:
+            print("[ERROR] Could not parse table of contents")
+            browser.close()
+            sys.exit(1)
+
+        print(f"Found {len(toc)} chapters in '{args.course}'")
+
+        # Filter to specific chapter if requested
+        if args.chapter:
+            toc = [ch for ch in toc if ch["id"] == args.chapter]
+            if not toc:
+                print(f"[ERROR] Chapter '{args.chapter}' not found")
+                browser.close()
+                sys.exit(1)
+
+        # If we already fetched the first chapter's article, use it
+        if args.chapter and _article:
+            # We already have it, save directly
+            success = 0
+            if crawl_chapter(context, args.course, toc[0], output_dir):
+                success = 1
+        else:
+            # Crawl each chapter
+            success = 0
+            for chapter_info in toc:
+                if crawl_chapter(context, args.course, chapter_info, output_dir):
+                    success += 1
+                time.sleep(1.5)  # Rate limit between chapters
+
+        browser.close()
 
     print(f"\nDone! {success}/{len(toc)} chapters saved to {output_dir}/")
 
