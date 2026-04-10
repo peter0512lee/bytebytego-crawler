@@ -2,6 +2,27 @@
 
 import os
 import re
+import markdown as md_lib
+
+
+# Special-case abbreviations for course slug → display name
+_SLUG_OVERRIDES = {
+    "genai": "GenAI",
+    "ml": "ML",
+    "oo": "OO",
+}
+
+
+def format_course_name(slug: str) -> str:
+    """Convert a course slug to a human-readable name."""
+    words = slug.split("-")
+    result = []
+    for word in words:
+        if word in _SLUG_OVERRIDES:
+            result.append(_SLUG_OVERRIDES[word])
+        else:
+            result.append(word.capitalize())
+    return " ".join(result)
 
 
 def _extract_title_from_md(md_path: str) -> str:
@@ -55,3 +76,8 @@ def scan_output_dir(output_dir: str) -> list[dict]:
             })
 
     return courses
+
+
+def render_markdown(md_text: str) -> str:
+    """Convert Markdown text to HTML."""
+    return md_lib.markdown(md_text, extensions=["fenced_code", "tables"])

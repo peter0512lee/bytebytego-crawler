@@ -1,7 +1,7 @@
 import os
 import tempfile
 
-from generate_site import scan_output_dir
+from generate_site import scan_output_dir, format_course_name, render_markdown
 
 
 def test_scan_output_dir():
@@ -35,3 +35,43 @@ def test_scan_skips_dirs_without_index_md():
 
         courses = scan_output_dir(tmp)
         assert len(courses[0]["chapters"]) == 1
+
+
+def test_format_course_name_basic():
+    assert format_course_name("system-design-interview") == "System Design Interview"
+
+
+def test_format_course_name_genai():
+    assert format_course_name("genai-system-design-interview") == "GenAI System Design Interview"
+
+
+def test_format_course_name_ml():
+    assert format_course_name("machine-learning-system-design-interview") == "Machine Learning System Design Interview"
+
+
+def test_format_course_name_oo():
+    assert format_course_name("object-oriented-design-interview") == "Object-Oriented Design Interview"
+
+
+def test_format_course_name_short():
+    assert format_course_name("tech-resume") == "Tech Resume"
+
+
+def test_render_markdown_basic():
+    md = "# Hello\n\nSome **bold** text.\n"
+    html = render_markdown(md)
+    assert "<h1>Hello</h1>" in html
+    assert "<strong>bold</strong>" in html
+
+
+def test_render_markdown_code_block():
+    md = "```python\nprint('hi')\n```\n"
+    html = render_markdown(md)
+    assert "<code" in html
+    assert "print" in html
+
+
+def test_render_markdown_images_preserved():
+    md = "![diagram](images/figure-1.svg)\n"
+    html = render_markdown(md)
+    assert 'src="images/figure-1.svg"' in html
