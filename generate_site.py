@@ -9,16 +9,25 @@ import markdown as md_lib
 _SLUG_OVERRIDES = {
     "genai": "GenAI",
     "ml": "ML",
-    "oo": "OO",
+    "object-oriented": "Object-Oriented",
 }
 
 
 def format_course_name(slug: str) -> str:
     """Convert a course slug to a human-readable name."""
+    # Handle multi-word phrases first (e.g., "object-oriented")
+    for phrase, replacement in _SLUG_OVERRIDES.items():
+        if "-" in phrase:
+            # Replace the phrase, preserving hyphens in the replacement
+            slug = slug.replace(phrase, replacement.replace("-", "\x00"))
+
     words = slug.split("-")
     result = []
     for word in words:
-        if word in _SLUG_OVERRIDES:
+        # Restore hyphens in multi-word replacements
+        if "\x00" in word:
+            result.append(word.replace("\x00", "-"))
+        elif word in _SLUG_OVERRIDES:
             result.append(_SLUG_OVERRIDES[word])
         else:
             result.append(word.capitalize())
