@@ -5,6 +5,7 @@ import os
 from urllib.parse import urlparse, parse_qs, unquote
 
 from bs4 import BeautifulSoup
+from markdownify import markdownify
 
 
 def parse_toc(html: str) -> list[dict] | None:
@@ -55,3 +56,8 @@ def rewrite_image_paths(article_html: str, url_map: dict[str, str]) -> str:
         if src and src in url_map:
             img["src"] = url_map[src]
     return soup.decode_contents()
+
+
+def html_to_markdown(html: str) -> str:
+    """Convert HTML to Markdown."""
+    return markdownify(html, heading_style="ATX", strip=["script", "style"])
