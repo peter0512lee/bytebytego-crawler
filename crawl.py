@@ -154,11 +154,19 @@ def crawl_chapter(
     chapter_num = chapter_info["chapter"]
     chapter_id = chapter_info["id"]
     title = chapter_info["title"]
-    dir_name = f"{chapter_num:02d}-{chapter_id}"
+    # chapter_num may be int (e.g. 1) or string (e.g. "01-00")
+    if isinstance(chapter_num, int):
+        dir_name = f"{chapter_num:02d}-{chapter_id}"
+        label = f"{chapter_num:02d}"
+    else:
+        dir_name = f"{chapter_num}-{chapter_id}"
+        label = str(chapter_num)
+    # Flatten nested ids (e.g. "two-pointers/pair-sum-sorted" → "two-pointers--pair-sum-sorted")
+    dir_name = dir_name.replace("/", "--")
     chapter_dir = os.path.join(output_dir, dir_name)
     images_dir = os.path.join(chapter_dir, "images")
 
-    print(f"\n[{chapter_num:02d}] {title}")
+    print(f"\n[{label}] {title}")
     print(f"  Fetching {chapter_id}...")
 
     _source, article_html = fetch_rendered_page(context, course, chapter_id)
