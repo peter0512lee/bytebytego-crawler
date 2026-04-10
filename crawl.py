@@ -115,3 +115,121 @@ def download_image(session: requests.Session, url: str, dest: str) -> bool:
     except requests.RequestException as e:
         print(f"  [WARN] Image download failed: {e}")
     return False
+
+
+def crawl_chapter(
+    session: requests.Session,
+    course: str,
+    chapter_info: dict,
+    output_dir: str,
+) -> bool:
+    """Crawl a single chapter. Returns True on success."""
+    chapter_num = chapter_info["chapter"]
+    chapter_id = chapter_info["id"]
+    title = chapter_info["title"]
+    dir_name = f"{chapter_num:02d}-{chapter_id}"
+    chapter_dir = os.path.join(output_dir, dir_name)
+    images_dir = os.path.join(chapter_dir, "images")
+
+    print(f"\n[{chapter_num:02d}] {title}")
+    print(f"  Fetching {chapter_id}...")
+
+    html = fetch_page(session, course, chapter_id)
+    if not html:
+        print(f"  [SKIP] Failed to fetch chapter")
+        return False
+
+    article_html = extract_article(html)
+    if not article_html:
+        print(f"  [SKIP] No <article> found — may require paid access")
+        return False
+
+    # Download images
+    image_urls = collect_image_urls(article_html)
+    url_map = {}
+    if image_urls:
+        os.makedirs(images_dir, exist_ok=True)
+        for img_url in image_urls:
+            filename = _filename_from_url(img_url)
+            local_path = f"images/{filename}"
+            dest = os.path.join(chapter_dir, local_path)
+            if download_image(session, img_url, dest):
+                url_map[img_url] = local_path
+                print(f"  Downloaded {filename}")
+            time.sleep(0.5)
+
+    # Rewrite image paths and save HTML
+    if url_map:
+        article_html = rewrite_image_paths(article_html, url_map)
+
+    os.makedirs(chapter_dir, exist_ok=True)
+
+    html_path = os.path.join(chapter_dir, "index.html")
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(f"<!DOCTYPE html>\n<html><head><meta charset='utf-8'>"
+                f"<title>{title}</title></head><body>\n")
+        f.write(article_html)
+        f.write("\n</body></html>")
+    print(f"  Saved {html_path}")
+
+    # Convert to Markdown
+    md = html_to_markdown(article_html)
+    md_path = os.path.join(chapter_dir, "index.md")
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write(f"# {title}\n\n")
+        f.write(md)
+    print(f"  Saved {md_path}")
+
+    return True
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Crawl ByteByteGo courses")
+    parser.add_argument("course", help="Course slug (e.g. genai-system-design-interview)")
+    parser.add_argument("--chapter", help="Crawl only this chapter slug")
+    parser.add_argument("--output", default="output", help="Output directory (default: output)")
+    args = parser.parse_args()
+
+    load_dotenv()
+    cookie = os.environ.get("BYTEBYTEGO_COOKIE", "")
+    if not cookie:
+        print("[ERROR] BYTEBYTEGO_COOKIE not set in .env")
+        sys.exit(1)
+
+    session = create_session(cookie)
+    output_dir = os.path.join(args.output, args.course)
+
+    # Fetch TOC from the first chapter (or the specified chapter)
+    first_slug = args.chapter or "introduction-and-overview"
+    print(f"Fetching table of contents from {first_slug}...")
+    html = fetch_page(session, args.course, first_slug)
+    if not html:
+        print("[ERROR] Failed to fetch initial page")
+        sys.exit(1)
+
+    toc = parse_toc(html)
+    if not toc:
+        print("[ERROR] Could not parse table of contents")
+        sys.exit(1)
+
+    print(f"Found {len(toc)} chapters in '{args.course}'")
+
+    # Filter to specific chapter if requested
+    if args.chapter:
+        toc = [ch for ch in toc if ch["id"] == args.chapter]
+        if not toc:
+            print(f"[ERROR] Chapter '{args.chapter}' not found")
+            sys.exit(1)
+
+    # Crawl each chapter
+    success = 0
+    for chapter_info in toc:
+        if crawl_chapter(session, args.course, chapter_info, output_dir):
+            success += 1
+        time.sleep(1.5)  # Rate limit between chapters
+
+    print(f"\nDone! {success}/{len(toc)} chapters saved to {output_dir}/")
+
+
+if __name__ == "__main__":
+    main()
