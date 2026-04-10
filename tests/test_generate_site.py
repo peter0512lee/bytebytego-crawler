@@ -1,7 +1,14 @@
 import os
 import tempfile
 
-from generate_site import scan_output_dir, format_course_name, render_markdown
+from generate_site import (
+    scan_output_dir,
+    format_course_name,
+    render_markdown,
+    generate_home_page,
+    generate_course_page,
+    generate_chapter_page,
+)
 
 
 def test_scan_output_dir():
@@ -75,3 +82,71 @@ def test_render_markdown_images_preserved():
     md = "![diagram](images/figure-1.svg)\n"
     html = render_markdown(md)
     assert 'src="images/figure-1.svg"' in html
+
+
+def test_generate_home_page():
+    courses = [
+        {"slug": "system-design-interview", "chapters": [{"slug": "01-intro", "number": 1, "title": "Intro"}]},
+        {"slug": "tech-resume", "chapters": [{"slug": "01-ack", "number": 1, "title": "Ack"}, {"slug": "02-intro", "number": 2, "title": "Intro"}]},
+    ]
+    html = generate_home_page(courses)
+    assert "My Courses" in html
+    assert "System Design Interview" in html
+    assert "Tech Resume" in html
+    assert "1 chapters" in html or "1 chapter" in html
+    assert "2 chapters" in html
+    assert 'href="system-design-interview/index.html"' in html
+    assert "style.css" in html
+
+
+def test_generate_course_page():
+    course = {
+        "slug": "system-design-interview",
+        "chapters": [
+            {"slug": "01-intro", "number": 1, "title": "Introduction"},
+            {"slug": "02-scale", "number": 2, "title": "Scale Up"},
+        ],
+    }
+    html = generate_course_page(course)
+    assert "System Design Interview" in html
+    assert "Introduction" in html
+    assert "Scale Up" in html
+    assert 'href="01-intro/chapter.html"' in html
+    assert 'href="../index.html"' in html
+    assert "../style.css" in html
+
+
+def test_generate_chapter_page():
+    chapter = {"slug": "02-scale", "number": 2, "title": "Scale Up"}
+    prev_ch = {"slug": "01-intro", "number": 1, "title": "Introduction"}
+    next_ch = {"slug": "03-rate", "number": 3, "title": "Rate Limiter"}
+    md_content = "# Scale Up\n\nSome content with **bold**.\n"
+
+    html = generate_chapter_page(
+        course_name="System Design Interview",
+        chapter=chapter,
+        md_content=md_content,
+        prev_chapter=prev_ch,
+        next_chapter=next_ch,
+    )
+    assert "Scale Up" in html
+    assert "<strong>bold</strong>" in html
+    assert 'href="../index.html"' in html
+    assert 'href="../01-intro/chapter.html"' in html
+    assert 'href="../03-rate/chapter.html"' in html
+    assert "../../style.css" in html
+
+
+def test_generate_chapter_page_no_prev_next():
+    chapter = {"slug": "01-intro", "number": 1, "title": "Intro"}
+    md_content = "# Intro\n\nOnly chapter.\n"
+    html = generate_chapter_page(
+        course_name="Test",
+        chapter=chapter,
+        md_content=md_content,
+        prev_chapter=None,
+        next_chapter=None,
+    )
+    assert "Intro" in html
+    assert "Previous" not in html
+    assert "Next" not in html
