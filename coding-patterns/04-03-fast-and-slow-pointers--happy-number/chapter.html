@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../style.css">
+    <title>Happy Number - Coding Patterns</title>
+</head>
+<body>
+    <nav>
+        <a href="../index.html">← Coding Patterns</a>
+    </nav>
+    <article class="article-content">
+        <h1>Happy Number</h1>
+<h1>Happy Number</h1>
+<p>In number theory, a happy number is defined as a number that, when repeatedly subjected to the process of <strong>squaring its digits and summing those squares</strong>, eventually leads to 1. An unhappy number will never reach 1 during this process, and will get stuck in an infinite loop <a href="https://en.wikipedia.org/wiki/Happy_number">[1]</a>.</p>
+<p>Given an integer, determine if it's a happy number.</p>
+<h4>Example:</h4>
+<pre><code>Input: n = 23
+Output: True
+</code></pre>
+<p>Explanation: 222^222 + 323^232 = 13 ⇒ 121^212 + 323^232 = 10 ⇒ 121^212 + 020^202 = 1</p>
+<h2>Intuition</h2>
+<p>We can simulate the process of identifying a happy number by repeatedly summing the squares of each digit of a number, and then applying the same process to the resulting sum.</p>
+<p>According to the problem statement, this process could conclude in one of two ways:</p>
+<ul>
+<li>Case 1: the process continues until the final number is 1.</li>
+<li>Case 2: the process gets stuck in an infinite loop.</li>
+</ul>
+<p>If we diagram both scenarios, we observe something interesting:</p>
+<p><img alt="Image represents two distinct cases illustrating data flow, possibly representing different coding patterns or algorithms.  Case 1 shows a linear sequence of four circular nodes labeled 23, 13, 10, and 1, respectively.  Each node is connected to the next by a unidirectional arrow, indicating a sequential flow of information from 23 to 1. Case 2 depicts a circular flow of data. Eight circular nodes, labeled 116, 38, 73, 58, 37, 16, 4, and 20, are arranged in a circle.  Unidirectional arrows connect each node to the next in a clockwise direction, forming a closed loop.  Additionally, a separate circular sequence of three nodes (89, 145, and 42) is connected to the main circular sequence via arrows from node 58 to 89 and from node 42 to node 20.  The numbers within each node likely represent data values or states, and the arrows signify the direction of data processing or transformation." src="images/image-04-03-1-OY5A7RW3.svg" /></p>
+<p>This looks quite similar to a linked list problem. In particular, the problem of
+determining if a linked list has a cycle (case 2) or doesn’t (case 1).</p>
+<p>We can reduce this problem to the same <strong>cycle</strong> <strong>detection</strong> challenge as the <em>Linked List Loop</em> problem. By applying the fast and slow pointer technique (i.e., Floyd's Cycle Detection algorithm), we can efficiently determine if a cycle exists.</p>
+<p>However, in this problem, we don't have an actual linked list to perform the fast and slow pointer algorithm on. Therefore, we need to find a way to traverse the sequence of numbers generated in the happy number process.</p>
+<p>Conveniently, we already know what the “next” number in the sequence is for any number <code>x</code>. As described in the problem statement, the next number can be calculated by summing the square of each digit of <code>x</code>. So, if each number were a node in a linked list, we could get the “next” node by calculating the next number in the sequence.</p>
+<p><strong>Getting the next number in the sequence</strong><br />
+To calculate the next number of <code>x</code>, we need a way to access each digit of <code>x</code>. This can be done in two steps:</p>
+<ol>
+<li>The modulo operation (<strong><code>x % 10</code></strong>) is used to extract the last digit of a number <code>x</code>.</li>
+<li>Divide <code>x</code> by 10 (<strong><code>x = x / 10</code></strong>) to truncate the last digit, positioning the next digit as the new last digit.</li>
+</ol>
+<p>We can see this unfold in full below for <code>x = 123</code>:</p>
+<p><img alt="Image represents a flowchart illustrating the get_next_num(x) function, which takes an integer x (initially 123) as input and calculates a new number (next_num). The process involves iteratively extracting digits from x using the modulo operator (%) and integer division (/).  First, the rightmost digit (3) is obtained via x % 10, then x is updated to x / 10 (12). This process repeats, extracting the next digit (2) and then (1). Each extracted digit is circled in orange.  These digits are then used to calculate next_num by summing their squares (3² + 2² + 1² = 14). The iteration stops when x becomes 0.  Arrows indicate the flow of data, showing how the extracted digits (digit) are derived and subsequently used in the final calculation of next_num. The function's output, next_num, is explicitly calculated as 14 at the bottom." src="images/image-04-03-2-XT6PUY3L.svg" /></p>
+<p>Now that we have a way to traverse the sequence, we can implement Floyd’s Cycle Detection algorithm. To start, set the fast and slow pointers at the start of this sequence. Then move the pointers as follows:</p>
+<ul>
+<li>Advance the slow pointer one number at a time (<code>slow = get_next_num(slow)</code>).</li>
+<li>Advance the fast pointer two numbers at a time<br />
+  (<code>fast = get_next_num(get_next_num(fast))</code>).</li>
+</ul>
+<p>If the fast and slow pointers meet during the process, it indicates the presence of a cycle, meaning the number is not a happy number. Otherwise, the algorithm will end when we reach 1, in which case the number is a happy number.</p>
+<p>Try it yourself</p>
+<p>Write your solution to the problem before checking the reference implementation.</p>
+<p><a href="/exercises/coding-patterns/fast-and-slow-pointers/happy-number">Open Code Editor</a></p>
+<h2>Implementation</h2>
+<p>Python</p>
+<p>JavaScript</p>
+<p>Java</p>
+<pre><code>def happy_number(n: int) -&gt; bool:
+    slow = fast = n
+    while True:
+        slow = get_next_num(slow)
+        fast = get_next_num(get_next_num(fast))
+        if fast == 1:
+            return True
+        # If the fast and slow pointers meet, a cycle is detected. Hence, 'n' is not
+        # a happy number.
+        elif fast == slow:
+            return False
+    
+def get_next_num(x: int) -&gt; int:
+    next_num = 0
+    while x &gt; 0:
+        # Extract the last digit of 'x'.
+        digit = x % 10
+        # Truncate (remove) the last digit from 'x' using floor division.
+        x //= 10
+        # Add the square of the extracted digit to the sum.
+        next_num += digit ** 2
+    return next_num
+</code></pre>
+<p><img alt="" src="images/copy.3248da0c.svg" /></p>
+<h3>Complexity Analysis</h3>
+<p><strong>Time complexity:</strong> The time complexity of <code>happy_number</code> is O(log⁡(n))O(\log(n))O(log(n)). The full analysis of this time complexity is quite complicated and beyond the scope of interviews. For interested readers, please see the detailed analysis below.</p>
+<p><strong>Space complexity:</strong> The space complexity is O(1)O(1)O(1).</p>
+<h2>Interview Tip</h2>
+<p><em>Tip: Visualize the problem.</em><br />
+At first glance, this problem seems like it requires mathematical reasoning to solve. However, when we visualized the problem, we were able to formulate a solution using an algorithm we already know (Floyd’s Cycle Detection). Visualizing a problem can help uncover hidden patterns or data structures that can lead to the solution.</p>
+<h2>Happy Number Time Complexity Analysis</h2>
+<p>The following time complexity analysis establishes an upper bound on the steps required to determine a happy number. In this analysis, we define the "next number" of a number nnn as the result obtained by summing the squares of the digits of nnn.</p>
+<p><strong>1) Upper limit for the next number</strong>
+For any number nnn with a fixed number of digits, the maximum value for its successor is achieved when all its digits are 9. For instance, the maximum next number from a 3-digit number happens when this 3-digit number is 999.</p>
+<p><strong>2) Size of the next number relative to the number of digits</strong></p>
+<ul>
+<li>If a number nnn has 1 or 2 digits, it’s possible for the next number to be larger than nnn (e.g., the next number of 99 is 162, which is one digit longer).</li>
+<li>If a number nnn has 3 or more digits, the next number is always smaller than the original value of nnn. The table below highlights how the largest number with 3 or more digits has a smaller next number.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Digits</th>
+<th>Largest Number</th>
+<th>Next Number</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>9</td>
+<td>81</td>
+</tr>
+<tr>
+<td>2</td>
+<td>99</td>
+<td>162</td>
+</tr>
+<tr>
+<td>3</td>
+<td>999</td>
+<td>243</td>
+</tr>
+<tr>
+<td>4</td>
+<td>9999</td>
+<td>324</td>
+</tr>
+<tr>
+<td>5</td>
+<td>99999</td>
+<td>405</td>
+</tr>
+<tr>
+<td>6</td>
+<td>999999</td>
+<td>486</td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+</tbody>
+</table>
+<p><strong>3) Implications for cycles</strong>
+Since the next number is always smaller for numbers with three or more digits, it means a cycle can only commence in the happy number process once the number falls below 243 (the next number of 999). This is because we’ve observed that any number nnn larger than 243 will have the next number smaller than nnn. However, once we fall below 243, the next number can potentially be larger, potentially cycling back to a previous number.</p>
+<p><strong>4) Time complexity for numbers less than 243</strong>
+Once a number falls below 243, the algorithm will take less than 243 steps to either converge to 1 or to cycle back to a previous number in the sequence. Therefore, since the length of the cycle or the number of steps to reach 1 is bounded by 243, the time complexity of Floyd’s cycle detection algorithm for numbers less than 243 is O(1)O(1)O(1).</p>
+<p><strong>5) Time complexity for numbers greater than 243</strong>
+The number of digits in a number is approximately equal to log⁡(n)\log(n)log(n) (base 10). So, the calculation of the next number of nnn will take approximately log⁡(n)\log(n)log(n) steps (i.e., <code>get_next_num</code> will take log⁡(n)\log(n)log(n) steps to execute).</p>
+<p>Let's call nnn’s next number n2n^2n2. The next number after n2n^2n2 (n3n^3n3) will take approximately log⁡(n2)\log(n^2)log(n2) steps to calculate. The next number after n3n^3n3 (n4n^4n4) will take approximately log⁡(n3)\log(n^3)log(n3) steps to calculate, and so on. From this, we can summarize the time complexity of this process as O(log⁡(n)+log⁡(n2)+log⁡(n3)+…)O(\log(n)+\log(n^2)+\log(n^3)+…)O(log(n)+log(n2)+log(n3)+…). Since we've established that n&gt;n2&gt;…&gt;nkn&gt;n^2&gt;…&gt;n^kn&gt;n2&gt;…&gt;nk where nkn^knk is the last number greater than 243, the dominant component of this time complexity is O(log⁡(n))O(\log(n))O(log(n)). So, the time complexity for numbers greater than 243 is O(log⁡(n))O(\log(n))O(log(n)).</p>
+<p><strong>Conclusion</strong>
+When nnn is less than 243, the time complexity is O(1), and when nnn is greater than 243, the time complexity is O(log⁡(n))O(\log(n))O(log(n)). Therefore, the overall time complexity of the algorithm is O(log⁡(n))O(\log(n))O(log(n)).</p>
+<h2>Interview Tip</h2>
+<p><em>Tip: Don’t waste time on complex proofs if it isn’t an important part of the interview.</em></p>
+<p>During an interview, correctly deciphering the exact time of an algorithm like the one used to solve this problem isn't usually expected. In situations like this, you can instead make an educated guess about how the algorithm's runtime would grow with larger inputs based on the behavior of the algorithm. Mention any assumptions you make when discussing your estimates.
+It might also be helpful to mention what parts of the problem or the solution make it difficult to analyze the time complexity. In this problem, it’s initially unclear how many steps the happy number process would take before reaching 1 or revealing a cycle.</p>
+    </article>
+    <nav class="chapter-nav"><a href="../04-02-fast-and-slow-pointers--linked-list-midpoint/chapter.html">← Previous: Linked List Midpoint</a> | <a href="../05-00-sliding-windows--introduction-to-sliding-windows/chapter.html">Next: Introduction to Sliding Windows →</a></nav>
+</body>
+</html>

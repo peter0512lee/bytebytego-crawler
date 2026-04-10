@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../style.css">
+    <title>Graph Deep Copy - Coding Patterns</title>
+</head>
+<body>
+    <nav>
+        <a href="../index.html">← Coding Patterns</a>
+    </nav>
+    <article class="article-content">
+        <h1>Graph Deep Copy</h1>
+<h1>Graph Deep Copy</h1>
+<p>Given a reference to a node within an undirected graph, create a <strong>deep copy</strong> (clone) of the graph. The copied graph must be completely independent of the original one. This means you need to make new nodes for the copied graph instead of reusing any nodes from the original graph.</p>
+<h4>Example:</h4>
+<p><img alt="Image represents a comparison between an 'Original Graph' and its 'Cloned Graph.'  The original graph is depicted as a simple undirected graph with four nodes labeled 0, 1, 2, and 3. Node 0 is connected to nodes 1 and 2, node 1 is connected to node 0 and 2, node 2 is connected to nodes 0, 1, and 3, and node 3 is connected to node 2. The cloned graph mirrors this structure, with identical node labels and connections; however, each node in the cloned graph is represented by a dashed orange circle with a pale peach fill, visually distinguishing it from the solid-line, white-filled circles of the original graph.  A textual description to the right clarifies that all nodes in the cloned graph are 'deep copies,' implying that they are independent copies and do not share any references or pointers with the nodes in the original graph." src="images/graph-deep-copy-2LGJEKFQ.svg" /></p>
+<h4>Constraints:</h4>
+<ul>
+<li>The value of each node is unique.</li>
+<li>Every node in the graph is reachable from the given node.</li>
+</ul>
+<h2>Intuition</h2>
+<p>Our strategy for this problem is to traverse the original graph and create the deep copy during the traversal, effectively cloning each node while we traverse. Any traversal method will suffice for this strategy. In this explanation, we’ll use <strong>DFS</strong>.</p>
+<p><strong>Traversing the graph</strong><br />
+Start by defining exactly what we want our DFS function to do. When we call DFS on the input node, we expect it to create a deep copy of that node and all its neighbors. Let’s break down this process.</p>
+<p>The first thing our function will do is create a copy of its input node:</p>
+<p><img alt="Image represents a diagram illustrating a Depth-First Search (DFS) algorithm, specifically showcasing node cloning.  The left side depicts a graph with four nodes (0, 1, 2, 3) interconnected. Node 0 is connected to nodes 1 and 2, node 1 is connected to node 2, and node 2 is connected to node 3.  A rectangular box labeled 'node' points a downward arrow to node 0, indicating the starting point of the DFS traversal. The text 'dfs(θ):' above signifies that a depth-first search is being performed starting at node 0 (represented by θ). On the right side, a rectangular box labeled 'cloned_node' points to a dashed-line circle containing θ, representing a cloned version of the starting node. This illustrates the creation of a copy of the starting node during the DFS process, potentially for purposes like maintaining a visited node list or exploring different paths in the graph.  The difference in the style of the node (solid vs. dashed line) highlights the distinction between the original and cloned nodes." src="images/image-13-01-1-RQF5OQ2V.svg" /></p>
+<p>Next, we want to ensure this cloned node is connected to a clone of all its neighbors, mirroring the original node’s neighbors. To achieve this, we'll call the DFS function on each of the original node's neighbors:</p>
+<p><img alt="Image represents a visual comparison of a graph traversal algorithm, likely Depth-First Search (DFS), on an original graph and its cloned version.  On the left, a simple undirected graph is shown with four nodes labeled 0, 1, 2, and 3.  Node 0 is connected to nodes 1 and 2, node 1 is connected to nodes 0 and 3, and node 2 is connected to nodes 0 and 3.  A rectangular box labeled 'node' points to node 0, indicating a starting point for traversal. On the right, a cloned version of node 0 is depicted within a dashed orange circle, representing a starting point for DFS on the cloned graph.  From this cloned node 0, dashed orange lines indicate recursive calls to the DFS function.  One dashed line connects to node 1, labeled 'dfs((1))', signifying a DFS call on node 1. Another dashed line connects to a circle labeled 'dfs((2))', representing a DFS call on node 2. The arrangement visually demonstrates how a cloned node initiates separate DFS traversals, potentially for parallel processing or independent exploration of the graph's structure." src="images/image-13-01-2-PIW6CRYF.svg" /></p>
+<p>Each of these DFS instances will also do the same thing by creating a clone of their input node and returning it when it has been connected to its neighbors:</p>
+<p><img alt="Image represents a visual explanation of a Depth-First Search (DFS) algorithm on a graph.  The left side shows a simple undirected graph with four nodes labeled 0, 1, 2, and 3.  Node 0 is connected to nodes 1 and 2, node 1 is connected to node 2, and node 2 is connected to node 3.  A box labeled 'node' points to node 0, indicating the starting point of the DFS. The right side depicts the DFS process. A box labeled 'cloned_node' points to a dashed-line circled node 0, representing a copy of the starting node in the DFS traversal.  A dashed orange line connects this cloned node 0 to a function call dfs((1)), indicating a recursive call to DFS on node 1.  The result of dfs((1)), which is 1, is shown flowing via a right-angle arrow to a dashed-line circled node labeled '1', representing the return value.  Similarly, a dashed orange line connects the cloned node 0 to dfs((2)), representing a recursive call to DFS on node 2. The result of dfs((2)), which is 2, is shown flowing via a right-angle arrow to a dashed-line circled node labeled '2', representing the return value of the second recursive call. The dashed-line circles around nodes 0, 1, and 2 on the right side visually distinguish them as nodes visited during the DFS traversal." src="images/image-13-01-3-XQV4ZH3E.svg" /></p>
+<p>In pseudocode, this is what the process looks like:</p>
+<pre><code>dfs(node):
+    cloned_node = new GraphNode(node)
+    for neighbor in node.neighbors:
+        cloned_neighbor = dfs(neighbor)
+        cloned_node.neighbors.add(cloned_neighbor)
+    return cloned_node
+</code></pre>
+<p>One more thing we should be mindful of is the possibility of cloning nodes that have already been cloned.</p>
+<p><strong>Handling previously-cloned nodes</strong><br />
+Consider node 2 in the following graph and cloned graphs. Its neighbors are nodes 0, 1, and 3. Let’s say nodes 0 and 1 have already been cloned, but not node 3:</p>
+<p><img alt="Image represents a graph transformation illustrating a cloning pattern.  The left side shows an initial graph with four nodes labeled 0, 1, 2, and 3.  Node 0 is connected to node 2, node 1 is connected to nodes 0 and 2, and node 2 is connected to node 3.  A rectangular box labeled 'node' points to node 2 with an arrow, indicating that node 2 is the target of a cloning operation. The right side depicts the graph after the cloning operation.  Nodes 0, 1, and 2 are now outlined with a dashed orange border, indicating they are cloned.  The structure of the connections between nodes 0, 1, and 2 remains identical to the original graph, but node 2 is now a cloned node. A rectangular box labeled 'cloned_node' points to the cloned node 2 with an arrow, signifying the result of the cloning process.  The original node 3 and its connection to node 2 are not affected by the cloning." src="images/image-13-01-4-3FQUHDSJ.svg" /></p>
+<p>To link the cloned node 2 to its neighbors, we perform a DFS call to node 0, node 1, and node 3:</p>
+<p><img alt="Image represents a graph traversal algorithm, likely Depth-First Search (DFS), illustrated through two diagrams. The left diagram shows a simple undirected graph with four nodes (0, 1, 2, 3) and edges connecting them: node 0 connects to nodes 1 and 2; node 1 connects to nodes 0 and 2; node 2 connects to nodes 0, 1, and 3; and node 3 connects to node 2.  A rectangular box labeled 'node' points to node 2, indicating a starting point. The right diagram depicts the DFS traversal process.  A rectangular box labeled 'cloned_node' points to a lightly shaded, dashed-line circled node 2, representing a copy of the starting node in the traversal.  From this cloned node 2, dashed orange lines connect to nodes labeled 'dfs(0)', 'dfs(1)', and 'dfs(3)', indicating that the DFS function is recursively called on these nodes.  The arrangement shows the progression of the DFS algorithm, starting from node 2 and exploring its neighbors recursively." src="images/image-13-01-5-IEP7XF2V.svg" /></p>
+<p>Since cloned copies of nodes 0 and 1 already exist, our DFS function should return these previously created nodes, instead of creating new ones:</p>
+<p><img alt="Image represents a diagram illustrating a graph traversal algorithm, likely Depth-First Search (DFS), and its cloning mechanism.  The left side shows a simple undirected graph with four nodes (0, 1, 2, 3) where node 0 is connected to node 2, node 1 is connected to nodes 2 and 3, and node 2 is connected to node 3.  A labeled arrow 'node' points to node 2, indicating a starting point. The right side depicts the DFS process.  A rectangular box labeled 'previously created nodes' points to dashed-line circled nodes 0 and 1, representing nodes already visited. A rectangular box labeled 'cloned_node' points to a dashed-line circled node 2, a clone of node 2 from the original graph.  Solid arrows indicate the traversal path within the DFS, with 'dfs(x)' indicating a DFS call on node x. Dashed orange lines connect the cloned node 2 to nodes 0 and 3, showing the exploration of its neighbors.  The 'returns(x)' labels indicate the return of the DFS function after exploring node x. Finally, a curved arrow from a rectangular box labeled 'new node' points to the dashed-line circled node 3, suggesting the creation of a new node during the cloning process.  The overall diagram visualizes how a graph is traversed and cloned using a DFS-like algorithm." src="images/image-13-01-6-XMORXCZZ.svg" /></p>
+<p>We can manage this by using a <strong>hash map</strong> where each original node is a key, and the corresponding cloned node is the value. This way, whenever we perform a DFS call on a node, we first check if it already has a clone in our hash map. If it does, we just return the existing clone. If it doesn't, we create a new clone and add it to the hash map.</p>
+<p>Try it yourself</p>
+<p>Write your solution to the problem before checking the reference implementation.</p>
+<p><a href="/exercises/coding-patterns/graphs/graph-deep-copy">Open Code Editor</a></p>
+<h2>Implementation</h2>
+<p>Python</p>
+<p>JavaScript</p>
+<p>Java</p>
+<pre><code>from ds import GraphNode
+    
+def graph_deep_copy(node: GraphNode) -&gt; GraphNode:
+    if not node:
+        return None
+    return dfs(node)
+    
+def dfs(node: GraphNode, clone_map = {}) -&gt; GraphNode:
+    # If this node was already cloned, then return this previously cloned node.
+    if node in clone_map:
+        return clone_map[node]
+    # Clone the current node.
+    cloned_node = GraphNode(node.val)
+    # Store the current clone to ensure it doesn't need to be created again in future
+    # DFS calls.
+    clone_map[node] = cloned_node
+    # Iterate through the neighbors of the current node to connect their clones to the
+    # current cloned node.
+    for neighbor in node.neighbors:
+        cloned_neighbor = dfs(neighbor, clone_map)
+        cloned_node.neighbors.append(cloned_neighbor)
+    return cloned_node
+</code></pre>
+<p><img alt="" src="images/copy.3248da0c.svg" /></p>
+<h3>Complexity Analysis</h3>
+<p><strong>Time complexity:</strong> The time complexity of <code>graph_deep_copy</code> is O(n+e)O(n+e)O(n+e), where nnn is the number of nodes and eee is the number of edges of the graph. This is because we traverse through and create a clone of all nnn nodes of the original graph, and traverse across eee edges during DFS.</p>
+<p><strong>Space complexity:</strong> The space complexity is O(n)O(n)O(n) due to the space taken up by the recursive call stack, which can grow as large as nnn. In addition, the <code>clone_map</code> hash map stores a key-value pair for each of the nnn nodes.</p>
+    </article>
+    <nav class="chapter-nav"><a href="../13-00-graphs--introduction-to-graphs/chapter.html">← Previous: Introduction to Graphs</a> | <a href="../13-02-graphs--count-islands/chapter.html">Next: Count Islands →</a></nav>
+</body>
+</html>

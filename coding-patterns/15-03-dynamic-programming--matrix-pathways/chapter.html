@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../style.css">
+    <title>Matrix Pathways - Coding Patterns</title>
+</head>
+<body>
+    <nav>
+        <a href="../index.html">← Coding Patterns</a>
+    </nav>
+    <article class="article-content">
+        <h1>Matrix Pathways</h1>
+<h1>Matrix Pathways</h1>
+<p>You are positioned at the top-left corner of a <code>m × n</code> matrix, and can only move <strong>downward</strong> or <strong>rightward</strong> through the matrix. Determine the <strong>number of unique pathways</strong> you can take to reach the bottom-right corner of the matrix.</p>
+<h4>Example:</h4>
+<p><img alt="Image represents six distinct diagrams, each enclosed within a black square and overlaid on a 3x3 grid.  Each diagram depicts a path formed by a thick, orange line connecting two orange circles; one circle is located at the top-left corner of the grid in every diagram, representing a starting point, while the other circle, representing an endpoint, is positioned at various locations within the grid in each diagram. The orange line connecting these circles follows a path constrained by the grid lines, forming different right-angled routes across the grid in each of the six diagrams.  The paths vary in length and direction, demonstrating different possible routes from the top-left starting point to various endpoints within the 3x3 grid.  The endpoint circles have a slightly larger, lighter orange ring around them, visually distinguishing them from the starting point circles." src="images/matrix-pathways-UGT7EEGC.svg" /></p>
+<pre><code>Input: m = 3, n = 3
+Output: 6
+</code></pre>
+<h4>Constraints:</h4>
+<ul>
+<li><code>m, n ≥ 1</code></li>
+</ul>
+<h2>Intuition</h2>
+<p>At each cell, we can either move right or move down. No matter which direction we choose at any point, it will always move us closer to the destination. This means we just need to keep moving either right or down until we can no longer do so, at which point we’ve reached the bottom-right corner.</p>
+<p>Let's think about this problem backward. Assume we have already reached the bottom-right corner. How did we get here? We know for certain we came from either the cell directly above, or the cell directly to the left of the current position.</p>
+<p><img alt="Image represents a 3x3 grid, enclosed within a bold black border, with each cell delineated by thin black lines.  A light-blue circle with a slightly darker-blue inner circle is positioned in the bottom-right cell. An orange arrow points horizontally from the cell to the left of the circle, into the circle itself.  Simultaneously, another orange arrow points vertically downwards from the cell above the circle, also into the circle.  No text, URLs, or parameters are present within the grid or on the arrows; the image solely depicts the directional flow of information into a central point within a structured grid system." src="images/image-15-03-1-TAOW5PIC.svg" /></p>
+<p>This is equally true for any cell on the matrix, which means a generalization can be made: the number of paths to any cell is equal to the sum of the number of paths to the cell above it and the cell to its left.</p>
+<p><img alt="Image represents a diagram illustrating a recursive approach to calculating the number of pathways in a matrix.  The diagram uses a grid to visually represent matrix cells, with coordinates (r, c) denoting row 'r' and column 'c'.  An orange arrow points from cell (r-1, c) vertically downwards to cell (r, c), and another orange arrow points from cell (r, c-1) horizontally to the right towards cell (r, c). This visually demonstrates that the number of pathways to reach cell (r, c) is the sum of the pathways to reach cell (r-1, c) above it and cell (r, c-1) to its left.  Below the diagram, the equation matrix_pathways(r, c) = matrix_pathways(r - 1, c) + matrix_pathways(r, c - 1) explicitly defines this recursive relationship, stating that the total number of pathways to reach a cell (r, c) is equal to the sum of pathways to reach the cell above it and the cell to its left." src="images/image-15-03-2-MFWZHEZM.svg" /></p>
+<p>This demonstrates the existence of subproblems, and that this problem has an <strong>optimal substructure</strong>, where we need to solve two subproblems in order to solve the main problem. This makes this problem well-suited for DP. So, let’s translate the above <strong>recurrence relation</strong> to a DP formula:</p>
+<blockquote>
+<p><code>dp[r][c] = dp[r - 1][c] + dp[r][c - 1]</code>, where <code>dp[r][c]</code> represents the total number of paths that lead to cell (<code>r</code>, <code>c</code>).</p>
+</blockquote>
+<p>Before populating the DP table, we need to know our base cases.</p>
+<p><strong>Base cases</strong><br />
+We know <code>dp[0][0]</code> should be 1 because there’s only one path leading to cell (0, 0).</p>
+<p>What else do we know for certain? Since we can only move right or down, once we leave a row or column, we can never return to it because we can't move left or up. This means, for any cell in row 0 or column 0, there’s only one path to those cells:</p>
+<p><img alt="Image represents two grid diagrams illustrating different data processing approaches.  The left diagram shows a single row of a grid highlighted in peach, containing a light-blue filled circle at the far left and three consecutive orange right-pointing arrows extending from it across the row.  This suggests a horizontal, sequential processing of data.  A light-blue outlined circle is present at the bottom-right corner of the grid, implying a final result or output. The right diagram displays a peach-highlighted column, with a light-blue filled circle at the top and three consecutive orange downward-pointing arrows leading to a light-blue outlined circle at the bottom-right. This depicts a vertical, sequential processing of data, contrasting with the horizontal flow in the left diagram. Both diagrams use the same grid structure, suggesting a comparison between horizontal and vertical data processing methods within a similar context.  The small circles likely represent data points, while the arrows indicate the direction and flow of processing steps." src="images/image-15-03-3-6HKXFOFL.svg" /></p>
+<p>Therefore, we can set all cells in row 0 and column 0 to 1 as the base cases.</p>
+<p>Problem-solving tip: another way to identify row 0 and column 0 as base cases is by examining the DP formula. Since we need the values from row <code>r - 1</code> and column <code>c - 1</code> to populate <code>dp[r][c]</code>, all values at <code>r = 0</code> and <code>c = 0</code> must be pre-populated before using the formula to avoid index out-of-bound errors.</p>
+<p><strong>Populating the DP table</strong><br />
+Once the base cases are set, we can populate the remaining DP table, starting from cell (1, 1), using our DP formula (<code>dp[r][c] = dp[r-1][c] + dp[r][c-1]</code>):</p>
+<p><img alt="Image represents a transformation of a 4x4 matrix.  The left matrix is initialized with the value '1' in the first column and row, and all other cells are empty.  The top row and leftmost column are labeled with indices 0, 1, 2, and 3.  A thick black arrow points from the left matrix to the right matrix. The right matrix shows the result of a cumulative sum operation.  Specifically, each cell (i, j) in the right matrix contains the sum of all cells (x, y) in the left matrix where x ≤ i and y ≤ j.  For example, the cell at (1,1) in the right matrix is 2 (1+1 from the left matrix), the cell at (2,3) is 10 (1+1+1+1+1+1+1+1+1+1), and the cell at (3,3) is 20, representing the cumulative sum of all elements in the left matrix.  The values in the right matrix are calculated by iteratively summing the values from the left matrix, demonstrating a cumulative sum pattern." src="images/image-15-03-4-IJIH5HBU.svg" /></p>
+<p>After we fill in the DP table, we can return <strong><code>dp[m - 1][n - 1]</code></strong>, which contains the number of paths to the bottom-right corner.</p>
+<p>Try it yourself</p>
+<p>Write your solution to the problem before checking the reference implementation.</p>
+<p><a href="/exercises/coding-patterns/dynamic-programming/matrix-pathways">Open Code Editor</a></p>
+<h2>Implementation</h2>
+<p>Python</p>
+<p>JavaScript</p>
+<p>Java</p>
+<pre><code>def matrix_pathways(m: int, n: int) -&gt; int:
+    # Base cases: Set all cells in row 0 and column 0 to 1. We can do this by
+    # initializing all cells in the DP table to 1.
+    dp = [[1] * n for _ in range(m)]
+    # Fill in the rest of the DP table.
+    for r in range(1, m):
+        for c in range(1, n):
+            # Paths to current cell = paths from above + paths from left.
+            dp[r][c] = dp[r - 1][c] + dp[r][c - 1]
+    return dp[m - 1][n - 1]
+</code></pre>
+<p><img alt="" src="images/copy.3248da0c.svg" /></p>
+<h3>Complexity Analysis</h3>
+<p><strong>Time complexity:</strong> The time complexity of <code>matrix_pathways</code> is O(m⋅n)O(m\cdot n)O(m⋅n) because each cell in the DP table is populated once.</p>
+<p><strong>Space complexity:</strong> The space complexity is O(m⋅n)O(m\cdot n)O(m⋅n) due to the DP table, which contains m⋅nm\cdot nm⋅n elements.</p>
+<h2>Optimization</h2>
+<p>We can optimize our solution by understanding that, for each cell in the DP table, we only need to access the cells directly above it and to its left.</p>
+<p><img alt="Image represents a 2x2 grid illustrating a dynamic programming approach, likely for a problem involving a 2D array or matrix.  The grid is divided into four quadrants, each representing a cell in the DP table. The top-right quadrant is labeled dp[r-1][c], representing the value at row r-1 and column c. The bottom-left quadrant is labeled dp[r][c-1], representing the value at row r and column c-1. The bottom-right quadrant is labeled dp[r][c], representing the value at row r and column c. A downward-pointing arrow connects dp[r-1][c] to dp[r][c], indicating a dependency; the value of dp[r][c] is calculated using the value of dp[r-1][c]. A rightward-pointing arrow connects dp[r][c-1] to dp[r][c], indicating another dependency; the value of dp[r][c] also depends on the value of dp[r][c-1].  This suggests a recursive or iterative approach where the value of each cell is computed based on the values of its top and left neighbors." src="images/image-15-03-5-LJYBRPZ2.svg" /></p>
+<ul>
+<li>To get the cell above it (<code>dp[r-1][c]</code>), we only need access to the previous row.</li>
+<li>To get the cell to its left (<code>dp[r][c-1]</code>), we just need to look at the cell to the left of the current cell, which is in the same row we're currently populating.</li>
+</ul>
+<p>Therefore, we only need to maintain two rows:</p>
+<ul>
+<li><code>prev_row</code>: the previous row.</li>
+<li><code>curr_row</code>: the current row being populated.</li>
+</ul>
+<p><img alt="Image represents a 4x4 grid illustrating a coding pattern, possibly related to dynamic programming or matrix calculations.  The grid is labeled with row and column indices (0-3 for both).  The grid's cells contain numerical values; the top two rows (rows 0 and 1) show light gray numbers (1, 1, 1, 1; 1, 2, 3, 4 respectively). Row 2 displays bold black numbers (1, 3, 6, 10). Row 3 begins with a bold black '1'.  Downward-pointing gray arrows connect each element in row 2 to the corresponding element below in row 3, indicating a calculation dependency.  A horizontal gray arrow connects the initial '1' in row 3 to the next cell, suggesting a cumulative or iterative process.  To the right, an explanatory text states: 'to calculate row 3, the only other row we need is row 2,' clarifying the dependency between rows 2 and 3 in the calculation.  The labels 'prev_row: 2' and 'curr_row: 3' explicitly identify rows 2 and 3 as the previous and current rows in the computation, respectively." src="images/image-15-03-6-EIJMVIJT.svg" /></p>
+<p>This effectively reduces the space complexity to O(n)O(n)O(n) because we now only need to maintain two arrays of size nnn. After populating the DP values for the current row, we’ll need to make sure to update <code>prev_row</code> with the values from <code>curr_row</code> to prepare for the next iteration since the next row’s previous row is the current row. Below is the optimized code:</p>
+<p>Python</p>
+<p>JavaScript</p>
+<p>Java</p>
+<pre><code>def matrix_pathways_optimized(m: int, n: int) -&gt; int:
+    # Initialize 'prev_row' as the DP values of row 0, which are all 1s.
+    prev_row = [1] * n
+    # Iterate through the matrix starting from row 1.
+    for r in range(1, m):
+        # Set the first cell of 'curr_row' to 1. This is done by
+        # setting the entire row to 1.
+        curr_row = [1] * n
+        for c in range(1, n):
+            # The number of unique paths to the current cell is the sum
+            # of the paths from the cell above it ('prev_row[c]') and
+            # the cell to the left ('curr_row[c - 1]').
+            curr_row[c] = prev_row[c] + curr_row[c - 1]
+        # Update 'prev_row' with 'curr_row' values for the next
+        # iteration.
+        prev_row = curr_row
+    # The last element in 'prev_row' stores the result for the
+    # bottom-right cell.
+    return prev_row[n - 1]
+</code></pre>
+<p><img alt="" src="images/copy.3248da0c.svg" /></p>
+    </article>
+    <nav class="chapter-nav"><a href="../15-02-dynamic-programming--minimum-coin-combination/chapter.html">← Previous: Minimum Coin Combination</a> | <a href="../15-04-dynamic-programming--neighborhood-burglary/chapter.html">Next: Neighborhood Burglary →</a></nav>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../style.css">
+    <title>Introduction to Graphs - Coding Patterns</title>
+</head>
+<body>
+    <nav>
+        <a href="../index.html">← Coding Patterns</a>
+    </nav>
+    <article class="article-content">
+        <h1>Introduction to Graphs</h1>
+<h1>Introduction to Graphs</h1>
+<h2>Intuition</h2>
+<p>A graph is a data structure composed of nodes (vertices) connected by edges. Graphs are used to model relationships, where the edges define the relationships.</p>
+<p>Below is the implementation of the <code>GraphNode</code> class:</p>
+<p>Python</p>
+<p>JavaScript</p>
+<p>Java</p>
+<pre><code>class GraphNode:
+    def __init__(self, val):
+        self.val = val
+        self.neighbors = []
+</code></pre>
+<p><img alt="" src="images/copy.3248da0c.svg" /></p>
+<p><strong>Terminology:</strong></p>
+<ul>
+<li>Adjacent node/neighbor: two nodes are adjacent if there’s an edge connecting them.</li>
+<li>Degree: the number of edges connected to a node.</li>
+<li>Path: a sequence of nodes connected by edges.</li>
+</ul>
+<p><img alt="Image represents a graph illustrating graph traversal concepts.  The left side shows a graph with nodes labeled 0, 1, 2, 3, and 4. Node 0 is connected to nodes 1, 2, and 3 with solid black lines. Node 2 is connected to node 4 with a grey line.  Dashed blue lines encircle nodes 1, 2, and 3, and are labeled 'neighbors of node 0,' indicating these nodes are directly connected to node 0.  The text 'degree = 3' next to node 0 specifies its degree (number of connections). The right side shows the same graph, but with a peach-colored area highlighting a path from node 3 to node 4, traversing through node 2.  This highlighted path visually emphasizes a specific traversal sequence within the graph." src="images/image-13-00-1-MXPBYGLZ.svg" /></p>
+<p><strong>Attributes:</strong></p>
+<ul>
+<li>Directed vs. undirected: in a directed graph, edges have a direction associated with them.</li>
+<li>Weighted vs. unweighted: in a weighted graph, edges have a weight associated with them, such as distance or cost.</li>
+<li>Cyclic vs. acyclic: A cyclic graph contains at least one cycle, which is a path that starts and ends at the same node.</li>
+</ul>
+<p><img alt="Image represents three different graph structures illustrating variations in graph properties.  The first graph, labeled 'directed:', shows a directed acyclic graph (DAG) with nodes numbered 0 through 4.  Node 0 has directed edges pointing to nodes 1 and 2. Node 3 has a directed edge to node 2, and node 2 has a directed edge to node 4. The second graph, labeled 'weighted:', depicts a weighted undirected graph with the same nodes (0-4) but with numerical weights (6, 12, 10, 4, 3) assigned to each edge, indicating the connection strength or cost between nodes.  The third graph, labeled 'cyclic:', displays a cyclic undirected graph with nodes 0 through 4.  This graph contains a cycle, highlighted by thicker peach-colored edges, between nodes 0, 2, and 3; the word 'cycle' is written in orange within this cycle.  All three graphs use circles to represent nodes and lines to represent edges, with arrows indicating direction in the first graph and numbers indicating weights in the second." src="images/image-13-00-2-KLUI3DTJ.svg" /></p>
+<p><strong>Representations</strong><br />
+In some problems, you might not be given the graph directly. In these situations, it’s usually necessary to create your own representation of the graph. The two most common representations to choose from are an adjacency list and an adjacency matrix.</p>
+<p>In an <strong>adjacency list</strong>, the neighbors of each node are stored as a list. Adjacency lists can be implemented using a hash map, where the key represents the node, and its corresponding value represents the list of that node’s neighbors.</p>
+<p>In an <strong>adjacency matrix</strong>, the graph is represented as a 2D matrix where matrix[i][j] indicates an edge between nodes i and j.</p>
+<p><img alt="Image represents a graph data structure illustrated in three different ways:  First, a visual representation shows five nodes (0, 1, 2, 3, 4) connected by edges, forming a tree-like structure. Node 0 is the root, connected to nodes 1 and 3. Node 3 is also connected to node 2, and node 2 is connected to node 4. Second, an adjacency list represents the same graph.  It's a table with a 'node' column (0-4) and a 'neighbors' column. Each row shows a node and a list of its directly connected neighbors. For example, node 0's neighbors are 1, 2, and 3. Third, an adjacency matrix is shown, a 5x5 grid representing the graph's connections. Rows and columns are labeled 0-4, corresponding to the nodes. A '1' at position (i, j) indicates a connection between node i and node j; a '0' indicates no direct connection.  For instance, the '1' at (0,1) shows a connection between node 0 and node 1, mirroring the visual and adjacency list representations.  The matrix is symmetric because the graph is undirected." src="images/image-13-00-3-SBN5QRVB.svg" /></p>
+<p>Adjacency lists are the most common choice for most implementations. They are preferred when representing sparse graphs and when we need to iterate over all the neighbors of a node efficiently.</p>
+<p>Adjacency matrices are preferred when representing dense graphs, and frequent checks are needed for the existence of specific edges.</p>
+<p><strong>Traversals</strong><br />
+The primary graph traversal techniques are DFS and BFS, both of which have similar use cases when they’re used on trees.</p>
+<p>When traversing a graph, it might also be necessary to <strong>keep track of visited nodes</strong> using a data structure such as a hash set, to ensure each node is only visited once.</p>
+<p>DFS is typically implemented recursively, as demonstrated in the code snippet below:</p>
+<p>Python</p>
+<p>JavaScript</p>
+<p>Java</p>
+<pre><code>def dfs(node: GraphNode, visited: Set[GraphNode]):
+    visited.add(node)
+    process(node)
+    for neighbor in node.neighbors:
+        if neighbor not in visited:
+            dfs(neighbor, visited)
+</code></pre>
+<p><img alt="" src="images/copy.3248da0c.svg" /></p>
+<p>BFS is typically implemented iteratively, as demonstrated in the code snippet below:</p>
+<p>Python</p>
+<p>JavaScript</p>
+<p>Java</p>
+<pre><code>def bfs(node: GraphNode):
+    visited = set()
+    queue = deque([node])
+    while queue:
+        node = queue.popleft()
+        if node not in visited:
+            visited.add(node)
+            process(node)
+            for neighbor in node.neighbors:
+                queue.append(neighbor)
+</code></pre>
+<p><img alt="" src="images/copy.3248da0c.svg" /></p>
+<p>Both DFS and BFS have a <strong>time complexity</strong> of O(n+e)O(n+e)O(n+e), where nnn denotes the number of nodes and eee denotes the number of edges. This is because during traversal, each node is visited once, and each edge is explored once.</p>
+<p>They both also share a <strong>space complexity</strong> of O(n)O(n)O(n). For DFS, this is due to the space taken up by the recursive call stack, and for BFS, it’s due to the space taken up by the queue.</p>
+<h2>Real-world Example</h2>
+<p><strong>Social networks:</strong> Users of social media sites like LinkedIn are typically represented as nodes, and connections or friendships between users are represented as edges. The graph structure allows platforms to analyze relationships, suggest new connections, and identify groups or communities within their networks.</p>
+<h2>Chapter Outline</h2>
+<p><img alt="Image represents a hierarchical diagram illustrating different coding patterns related to graphs.  A top-level rounded rectangle labeled 'Graphs' points downwards to two main branches: 'DFS' (Depth-First Search) and 'BFS' (Breadth-First Search).  Each of these branches contains a rounded rectangle listing associated graph problems: DFS includes 'Graph Deep Copy,' 'Count Islands,' 'Bipartite Graph Validation,' and 'Longest Increasing Path'; BFS includes 'Matrix Infection' and 'Shortest Transformation Sequence.'  Further down, dashed lines connect these main branches to two additional rounded rectangles: 'Dijkstra's Algorithm' (connected to DFS, listing 'Shortest Path') and 'Topological Sort' (connected to BFS, listing 'Prerequisites'). Finally, a central dashed line from both DFS and BFS converges to a bottom rounded rectangle labeled 'Union-Find,' which lists 'Merging Communities' and 'Connect the Dots' as associated problems.  The overall structure shows how various graph algorithms and problems are categorized under DFS, BFS, and the Union-Find pattern, with Dijkstra's Algorithm and Topological Sort being specific applications within those broader categories." src="images/image-13-00-4-4YFLG6KI.svg" /></p>
+    </article>
+    <nav class="chapter-nav"><a href="../12-03-tries--find-all-words-on-a-board/chapter.html">← Previous: Find All Words on a Board</a> | <a href="../13-01-graphs--graph-deep-copy/chapter.html">Next: Graph Deep Copy →</a></nav>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../style.css">
+    <title>Swap Odd and Even Bits - Coding Patterns</title>
+</head>
+<body>
+    <nav>
+        <a href="../index.html">← Coding Patterns</a>
+    </nav>
+    <article class="article-content">
+        <h1>Swap Odd and Even Bits</h1>
+<h1>Swap Odd and Even Bits</h1>
+<p>Given an unsigned 32-bit integer <code>n</code>, return an integer where all of <code>n</code>'s even bits are <strong>swapped</strong> with their adjacent odd bits.</p>
+<h4>Example 1:</h4>
+<p><img alt="Image represents a diagram illustrating a binary addition process.  The diagram shows two rows of binary numbers, representing the addends. The top row displays the binary number 10101 (which is 21 in decimal), and the bottom row displays 010110 (which is 22 in decimal). To the right of each row is the decimal equivalent in parentheses: (41) and (22) respectively.  A horizontal arrow points to the beginning of the bottom row, indicating the start of the addition.  Between the two rows, orange curved arrows connect pairs of digits, visually representing the carry-over operation in binary addition.  Each arrow connects a pair of digits where a carry is generated (1 + 1 = 10 in binary, resulting in a 0 in the current position and a carry of 1 to the next position).  The arrangement and the arrows clearly show the step-by-step process of binary addition, highlighting the carry propagation." src="images/swap-odd-and-even-bits1-765WVD32.svg" /></p>
+<pre><code>Input: n = 41
+Output: 22
+</code></pre>
+<h4>Example 2:</h4>
+<p><img alt="Image represents a diagram illustrating a data transformation or processing step, possibly within a coding pattern related to binary data or bit manipulation.  The diagram shows two rows of binary digits (0s and 1s), labeled (23) and (43) respectively, representing input data. A horizontal arrow pointing to the right precedes the bottom row, indicating the direction of data flow.  Three pairs of vertically stacked binary digits are shown, each pair connected by an orange curved arrow pointing upwards from the bottom digit to the top digit.  This suggests a transformation or operation is applied to each pair, potentially a bitwise operation or a simple mapping.  The top row represents the output after this transformation, with the pairs of digits seemingly undergoing the same operation. The numbers (23) and (43) likely represent identifiers or labels for the input and output data sets, possibly indicating their source or destination within a larger system." src="images/swap-odd-and-even-bits2-KNYQUWJJ.svg" /></p>
+<pre><code>Input: n = 23
+Output: 43
+</code></pre>
+<h2>Intuition</h2>
+<p>Swapping even and odd bits means that each bit in an even position is swapped with the bit in the next odd position, and vice versa. Note that the positions start at position 0, which is the position of the least significant bit.</p>
+<p>The key thing to notice is that, in order to perform the swap:</p>
+<ul>
+<li>All bits in the even positions need to be shifted one position to the left.</li>
+<li>All bits in the odd positions need to be shifted one position to the right.</li>
+</ul>
+<p><img alt="Image represents a visual depiction of a bitwise XOR operation across multiple positions.  The top row displays 'position:' followed by numbers 5 through 0, indicating the positional index of the bits. Below this, two rows of binary digits (0s and 1s) are presented. Each column represents a bit at a specific position.  Within each column, a pair of numbers is shown; the top number represents the input bit A, and the bottom number represents the input bit B.  Orange and light-blue arrows connect these input bits, visually demonstrating the XOR operation: an orange arrow points from the top bit to the bottom bit if the top bit is 1, and a light-blue arrow points from the bottom bit to the top bit if the bottom bit is 1. The result of the XOR operation (A XOR B) is implicitly shown by the arrangement of the arrows, where the presence of an arrow indicates a '1' result and its absence indicates a '0' result.  The pattern repeats across all positions, illustrating the consistent application of the XOR operation on each bit pair." src="images/image-18-03-1-QKLL25QR.svg" /></p>
+<p>This suggests that if we had a way to extract all the even and odd-positioned bits separately, we could shift them accordingly and then merge them back together, so the odd-positioned bits are in the even positions, and vice versa.</p>
+<p><img alt="Image represents a flowchart illustrating a bit manipulation algorithm.  At the top, a sequence of bits '1 0 1 0 0 1' is shown.  This sequence is split into two branches. The top-left branch, labeled 'extract even bits' in cyan, uses a left shift operation, indicated by cyan arrows, resulting in the subsequence '0 0 1'. The top-right branch, labeled 'extract odd bits' in orange, uses a right shift operation, indicated by orange arrows, resulting in the subsequence '1 0 1'.  Each shift operation involves moving the bits to the left or right, with empty spaces filled by zeros.  The subsequences '0 0 1' and '1 0 1' are then merged at the bottom using a 'merge' operation, resulting in the final sequence '0 1 0 1 1 0'.  The intermediate steps clearly show the left and right shifts applied to the extracted even and odd bits respectively, before the final merging step.  The circles represent individual bits (0 or 1), with light blue circles representing the even bits and light orange circles representing the odd bits after the extraction.  Grey circles represent empty spaces or zeros introduced during the shift operations." src="images/image-18-03-2-GR7VPIZR.svg" /></p>
+<p>Let’s start by figuring out how to obtain the even and odd bits of n.</p>
+<p><strong>Obtaining all even bits</strong><br />
+To obtain all even bits of n, we can use a mask which has all even bit positions set to 1:</p>
+<p><img alt="Image represents a visual depiction of an 'even mask' applied to a sequence of numbers.  The top row displays a sequence of integers from 31 down to 0.  A horizontal gray line separates this sequence from a second row labeled 'even_mask ='.  The bottom row shows a corresponding sequence of 0s and 1s representing the even mask.  Each number in the top row is associated with a 0 or 1 in the bottom row;  a '1' indicates that the corresponding number in the top row is even, and a '0' indicates that it is odd.  The ellipsis ('...') in the bottom row signifies the continuation of this alternating pattern of 0s and 1s for the omitted numbers (27 to 6).  The arrangement clearly shows a one-to-one mapping between the input sequence (top row) and the resulting even mask (bottom row), illustrating a simple bitmasking operation." src="images/image-18-03-3-4SOTVC3V.svg" /></p>
+<p>Performing a bitwise-AND with this mask and n gives us an integer where all the bits at odd positions are set to 0, ensuring only the bits in even positions of n are preserved:</p>
+<p><img alt="Image represents a bitwise AND operation demonstrating how to extract even-indexed bits from a binary sequence.  The top row shows a binary sequence of length 'n', represented by alternating 0s and 1s, with ellipses (...) indicating continuation of the pattern.  Below it, labeled 'AND', is a second row, 'even_mask', which is a binary sequence of alternating 1s and 0s, starting with 0. This acts as a mask.  A horizontal line separates these two rows from the result below, labeled 'even_bits'. This bottom row shows the result of a bitwise AND operation between the top and middle rows.  Each bit in the 'even_bits' row is the result of the AND operation between the corresponding bits in the top and middle rows.  Specifically, the even-indexed bits (0, 2, 4, etc.) from the top row are preserved in the result because they are ANDed with 1s from the 'even_mask' row (resulting in the original bit), while the odd-indexed bits are all 0s because they are ANDed with 0s from the 'even_mask' row (resulting in 0). The light-blue circles highlight the resulting even bits in the bottom row." src="images/image-18-03-4-45CDA5ZJ.svg" /></p>
+<p><strong>Obtaining all odd bits</strong><br />
+Similarly, to obtain all the odd bits of n, we can use a mask with all odd bit positions are set to 1:</p>
+<p><img alt="Image represents a visual depiction of an odd mask applied to a sequence of numbers.  The top row displays a sequence of integers from 31 down to 0, arranged from left to right.  These numbers are written in a light gray color.  A horizontal gray line separates this top row from the bottom row. The bottom row shows the result of applying an 'odd mask' to the top row.  The label 'odd_mask =' precedes this bottom row.  The bottom row contains a sequence of 1s and 0s, where 1 represents an odd number from the top row and 0 represents an even number.  The sequence of 1s and 0s directly corresponds to the top row, with each 1 or 0 positioned below its corresponding number above.  The ellipsis ('...') in the bottom row indicates the continuation of the alternating 1 and 0 pattern for the omitted numbers between 28 and 5 in the top row.  The pattern clearly shows that the odd mask identifies odd numbers with a value of 1 and even numbers with a value of 0." src="images/image-18-03-5-Q6XAAVIX.svg" /></p>
+<p>Performing a bitwise-AND with this mask and n gives us an integer where all the bits at even positions are set to 0, ensuring only the bits at odd positions of n are preserved:</p>
+<p><img alt="Image represents a bitwise AND operation to extract odd bits from a binary sequence.  The top row shows a binary sequence of length 'n', represented by a series of 0s and 1s, with ellipses (...) indicating continuation of the pattern.  Below this, labeled 'AND', is another binary sequence, 'odd_mask', which consists of alternating 1s and 0s, starting with 1.  A horizontal line separates these two rows from the result below, labeled 'odd_bits'. This bottom row displays the result of the bitwise AND operation between the top and middle rows. Each bit in the 'odd_bits' row is the result of the AND operation between the corresponding bits in the top and middle rows.  Specifically, a 1 appears in the 'odd_bits' row only when both corresponding bits in the top and middle rows are 1; otherwise, a 0 is produced.  The parentheses next to each row label '(n)', '(odd_mask)', and '(odd_bits)' indicate the description of the respective rows.  The peach-colored circles highlight the resulting bits in the 'odd_bits' row, visually emphasizing the outcome of the bitwise AND operation." src="images/image-18-03-6-GUNXXBSV.svg" /></p>
+<p>Now that we’ve extracted all the even bits and odd bits separately, let’s use them to obtain the result, where the bits at odd and even positions are swapped.</p>
+<p><strong>Shifting and merging the bits at odd and even positions</strong><br />
+We can use the shift operator to shift the bits at even positions to the left once, and the bits at odd positions to the right once:</p>
+<p><img alt="Image represents two parallel rows of data transformations.  The top row shows a sequence of numbers, primarily zeros, with some light-blue circled zeros and a single light-blue circled '1'.  Light-blue arrows point downwards from the light-blue circled numbers to the row below, indicating a transformation. The bottom row shows the result of this transformation, which is mostly zeros, with a single light-blue circled '1' in the result. To the far right, '&lt;&lt; 1' indicates a condition where the input contains a '1' at a specific position. The bottom row demonstrates a similar process, but with peach-colored circles containing zeros and a single peach-colored circled '1'.  Orange arrows point downwards from the peach-colored circled numbers to the row below, representing another transformation. The resulting bottom row contains mostly zeros, with a single peach-colored circled '1'.  To the far right, '&gt;&gt; 1' indicates a condition where the input contains a '1' at a specific position.  Ellipses (...) are used to represent the continuation of the sequences.  The equal signs (=) indicate the result of the transformations.  The overall diagram illustrates two different data transformation processes based on the presence or absence of a '1' in the input sequence." src="images/image-18-03-7-JWAI3ESP.svg" /></p>
+<p>Then, to merge these together, we can use the bitwise-OR operator because it combines the two sets of bits into the final result.</p>
+<p><img alt="Image represents a bitwise OR operation illustrated using two rows of bits and a result row.  The top row, labeled '(shifted even_bits),' displays a sequence of bits represented by light-blue circles, containing mostly 0s with a single 1 near the end. The second row, labeled '(shifted odd_bits),' shows a sequence of bits in peach-colored circles, also primarily 0s but with a 1 in the middle.  Each bit in the top and bottom rows is vertically aligned. The label 'OR' is placed to the left of a horizontal line separating the input rows from the result row. The result row below the line shows the bitwise OR of the corresponding bits from the top two rows; each bit in this row is a light-blue circle if the corresponding bit in the top row is 1, otherwise it's a peach-colored circle if the corresponding bit in the bottom row is 1, and 0 otherwise.  The result demonstrates that the bitwise OR operation combines the bits from both input rows, resulting in a 1 if either of the corresponding bits is 1, and 0 only if both corresponding bits are 0.  Ellipses (...) are used to indicate that the sequences of bits continue beyond the displayed portion." src="images/image-18-03-8-25JBL66S.svg" /></p>
+<p>Now, the odd-positioned bits are in the even positions and vice versa.</p>
+<p>Try it yourself</p>
+<p>Write your solution to the problem before checking the reference implementation.</p>
+<p><a href="/exercises/coding-patterns/bit-manipulation/swap-odd-and-even-bits">Open Code Editor</a></p>
+<h2>Implementation</h2>
+<p>Python</p>
+<p>JavaScript</p>
+<p>Java</p>
+<pre><code>def swap_odd_and_even_bits(n: int) -&gt; int:
+    even_mask = 0x55555555   # 01010101010101010101010101010101
+    odd_mask = 0xAAAAAAAA  # 10101010101010101010101010101010
+    even_bits = n &amp; even_mask
+    odd_bits = n &amp; odd_mask
+    # Shift the even bits to the left, the odd bits to the right, and merge these
+    # shifted values together.
+    return (even_bits &lt;&lt; 1) | (odd_bits &gt;&gt; 1)
+</code></pre>
+<p><img alt="" src="images/copy.3248da0c.svg" /></p>
+<h3>Complexity Analysis</h3>
+<p><strong>Time complexity</strong>: The time complexity of <code>swap_odd_and_even_bits</code> is O(1)O(1)O(1).</p>
+<p><strong>Space complexity:</strong> The space complexity is O(1)O(1)O(1).</p>
+    </article>
+    <nav class="chapter-nav"><a href="../18-02-bit-manipulation--lonely-integer/chapter.html">← Previous: Lonely Integer</a> | <a href="../19-00-math-and-geometry--introduction-to-math-and-geometry/chapter.html">Next: Introduction to Math and Geometry →</a></nav>
+</body>
+</html>

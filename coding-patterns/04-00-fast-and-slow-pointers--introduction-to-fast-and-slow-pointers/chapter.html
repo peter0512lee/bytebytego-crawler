@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../style.css">
+    <title>Introduction to Fast and Slow Pointers - Coding Patterns</title>
+</head>
+<body>
+    <nav>
+        <a href="../index.html">← Coding Patterns</a>
+    </nav>
+    <article class="article-content">
+        <h1>Introduction to Fast and Slow Pointers</h1>
+<h1>Introduction to Fast and Slow Pointers</h1>
+<h2>Intuition</h2>
+<p>The fast and slow pointer technique is a specialized variant of the two-pointer pattern, characterized by the differing speeds at which two pointers traverse a data structure. In this technique, we designate a fast pointer and a slow pointer:</p>
+<ul>
+<li>Usually, <strong>the</strong> <strong>slow pointer moves one step</strong> in each iteration.</li>
+<li>Usually, <strong>the fast pointer moves two steps</strong> in each iteration.</li>
+</ul>
+<p>This creates a dynamic in which the fast pointer moves at twice the speed of the slow pointer:</p>
+<p><img alt="Image represents a visual depiction of the 'slow and fast pointer' algorithm often used in linked list traversal.  The diagram shows two parallel linked lists, each composed of several circular nodes connected by solid arrows representing the next pointer in each node.  The top list illustrates the initial state, with a 'slow' pointer (indicated by a light blue box labeled 'slow') and a 'fast' pointer (indicated by an orange box labeled 'fast') both initially pointing to the first node.  Arrows from the boxes point to their respective nodes.  The bottom list shows the pointers after one iteration. The 'slow' pointer has moved one node to the right, and the 'fast' pointer has moved two nodes to the right.  Both lists continue with ellipses (...) indicating that they extend beyond the visible portion.  Dashed arrows on the bottom list show the movement of the pointers.  To the right, a gray box with dashed borders contains pseudocode: slow = slow.next and fast = fast.next.next, illustrating how the pointers are updated in each iteration.  This code snippet explains the algorithm's core logic: the slow pointer advances one node at a time, while the fast pointer advances two nodes at a time." src="images/image-04-00-1-6EJMSHWN.svg" /></p>
+<p>Keep in mind these pointers aren't limited to just one and two steps. As long as the fast pointer advances more steps than the slow pointer does, the logic of the fast and slow pointer technique still applies.</p>
+<h2>Real-world Example</h2>
+<p><strong>Detecting cycles in symlinks</strong>: Symlinks are shortcuts that point to files or directories in a file system. A real-world example of using the fast and slow pointer technique is detecting cycles in symlinks.</p>
+<p>In this process, the slow pointer follows each symlink one step at a time, while the fast pointer moves two steps at a time. If the fast pointer catches up to the slow pointer, it indicates a loop in the symlinks, which can cause infinite loops or errors when accessing files. To understand how fast and slow pointers detect cycles in this way, study the <em>Linked List Loop</em> problem.</p>
+<h2>Chapter Outline</h2>
+<p>Fast and slow pointers are particularly beneficial in data structures like linked lists, where index-based access isn't available. They allow us to gather crucial information about the data structure's elements through the relative positions of the two pointers, rather than with indexing. This will become clearer as we explore some common use cases in this chapter.</p>
+<p><img alt="Image represents a hierarchical diagram illustrating the applications of 'Fast and Slow Pointers' coding pattern.  The top-level node, a rounded rectangle, is labeled 'Fast and Slow Pointers'.  From this node, three dashed lines descend to three lower-level nodes, each representing a specific application.  The leftmost node is a rounded rectangle labeled 'Cycle Detection - Linked List Loop', indicating its use in detecting cycles within linked lists. The rightmost node is a similarly styled rounded rectangle labeled 'Sequence Analysis - Happy Number', showing its application in analyzing number sequences, specifically the 'Happy Number' problem.  Finally, a central lower-level node, also a rounded rectangle, is labeled 'Fractional Point Identification - Linked List Midpoint', demonstrating its use in finding the midpoint of a linked list.  The connections between the top node and the three lower nodes represent the different ways the 'Fast and Slow Pointers' pattern can be utilized, with each lower node detailing a specific problem solved using this pattern." src="images/image-04-00-2-JHBGFDX7.svg" /></p>
+    </article>
+    <nav class="chapter-nav"><a href="../03-06-linked-lists--flatten-a-multi-level-linked-list/chapter.html">← Previous: Flatten a Multi-Level Linked List</a> | <a href="../04-01-fast-and-slow-pointers--linked-list-loop/chapter.html">Next: Linked List Loop →</a></nav>
+</body>
+</html>
