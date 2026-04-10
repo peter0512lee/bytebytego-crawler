@@ -13,3 +13,12 @@ def parse_toc(html: str) -> list[dict] | None:
         return None
     data = json.loads(script.string)
     return data["props"]["pageProps"]["toc"]
+
+
+def extract_article(html: str) -> str | None:
+    """Extract the <article> inner HTML from the page."""
+    soup = BeautifulSoup(html, "html.parser")
+    article = soup.find("article")
+    if not article:
+        return None
+    return article.decode_contents()
