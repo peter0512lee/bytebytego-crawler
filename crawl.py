@@ -1,11 +1,16 @@
 """ByteByteGo course crawler."""
 
+import argparse
 import json
 import os
+import sys
+import time
 from urllib.parse import urlparse, parse_qs, unquote
 
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 from markdownify import markdownify
+import requests
 
 
 def parse_toc(html: str) -> list[dict] | None:
@@ -61,3 +66,52 @@ def rewrite_image_paths(article_html: str, url_map: dict[str, str]) -> str:
 def html_to_markdown(html: str) -> str:
     """Convert HTML to Markdown."""
     return markdownify(html, heading_style="ATX", strip=["script", "style"])
+
+
+BASE_URL = "https://bytebytego.com"
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+
+
+def create_session(cookie: str) -> requests.Session:
+    """Create an HTTP session with cookie auth and browser-like headers."""
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": USER_AGENT,
+        "Cookie": cookie,
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9",
+    })
+    return session
+
+
+def fetch_page(session: requests.Session, course: str, chapter: str) -> str | None:
+    """Fetch a chapter page. Returns HTML string or None on failure."""
+    url = f"{BASE_URL}/courses/{course}/{chapter}"
+    for attempt in range(2):
+        try:
+            resp = session.get(url, timeout=30)
+            if resp.status_code == 200:
+                return resp.text
+            print(f"  [WARN] HTTP {resp.status_code} for {chapter}")
+            if attempt == 0:
+                time.sleep(2)
+        except requests.RequestException as e:
+            print(f"  [WARN] Request failed for {chapter}: {e}")
+            if attempt == 0:
+                time.sleep(2)
+    return None
+
+
+def download_image(session: requests.Session, url: str, dest: str) -> bool:
+    """Download an image to dest path. Returns True on success."""
+    try:
+        resp = session.get(url, timeout=30)
+        if resp.status_code == 200:
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            with open(dest, "wb") as f:
+                f.write(resp.content)
+            return True
+        print(f"  [WARN] Image HTTP {resp.status_code}: {url}")
+    except requests.RequestException as e:
+        print(f"  [WARN] Image download failed: {e}")
+    return False
